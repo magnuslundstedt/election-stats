@@ -192,6 +192,10 @@ def save(path: Path, obj):
 
 
 def main():
+    # Line-buffer stdout so progress is visible in CI logs and when piped to a
+    # file, not held until the process exits.
+    sys.stdout.reconfigure(line_buffering=True)
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--full", action="store_true", help="refetch everything")
     args = ap.parse_args()
