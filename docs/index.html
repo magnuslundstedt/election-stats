@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valstatistik 2026 – uppsamlingsdistrikt och slutlig räkning</title>
+<meta name="description" content="Följ den preliminära rösträkningen i uppsamlingsdistrikten och jämför slutlig räkning mot preliminär i samma valdistrikt. Data från Valmyndigheten.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="page">
+  <h1>Riksdagsvalet 2026 – räkningsläge</h1>
+  <p>
+    Uppsamlingsdistrikten och skillnaden mellan slutlig och preliminär räkning.
+    <span class="updated" id="updated"></span>
+  </p>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" id="tab-upp"   aria-controls="panel-upp"   aria-selected="true">Uppsamlingsdistrikt</button>
+  <button role="tab" id="tab-delta" aria-controls="panel-delta" aria-selected="false">Preliminär → slutlig</button>
+</nav>
+
+<div id="boot" class="loading">Läser in data…</div>
+
+<!-- ============ Uppsamlingsdistrikt ============ -->
+<div id="panel-upp" role="tabpanel" aria-labelledby="tab-upp" class="hidden">
+  <div class="tiles" id="upp-tiles"></div>
+
+  <section class="panel">
+    <h2>Partifördelning i räknade uppsamlingsdistrikt</h2>
+    <p class="hint">
+      Sent inkomna förtidsröster – brev- och utlandsröster – räknas i uppsamlingsdistrikt.
+      Kolumnen längst till höger visar hur dessa röster avviker från partiets riksresultat
+      i den preliminära räkningen, i procentenheter.
+    </p>
+    <div class="scroll"><table id="upp-parties"></table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Alla uppsamlingsdistrikt</h2>
+    <p class="hint">Ett per kommun eller kommunvalkrets. Sök på kommun eller valkrets.</p>
+    <div class="filters">
+      <input type="search" id="upp-search" placeholder="Sök kommun eller valkrets…" aria-label="Sök uppsamlingsdistrikt">
+      <select id="upp-status" aria-label="Filtrera på status">
+        <option value="all">Alla</option>
+        <option value="counted">Räknade</option>
+        <option value="pending">Ej räknade</option>
+      </select>
+      <span class="count" id="upp-count"></span>
+    </div>
+    <div class="scroll"><table id="upp-list"></table></div>
+  </section>
+</div>
+
+<!-- ============ Preliminär → slutlig ============ -->
+<div id="panel-delta" role="tabpanel" aria-labelledby="tab-delta" class="hidden">
+  <div class="tiles" id="delta-tiles"></div>
+
+  <p class="note" id="delta-method"></p>
+
+  <section class="panel">
+    <h2>Skillnad mellan slutlig och preliminär räkning</h2>
+    <p class="hint">
+      Jämförelsen omfattar <strong>enbart de valdistrikt som är slutligt räknade</strong>,
+      och ställs mot den preliminära räkningen i exakt samma distrikt – så att siffran inte
+      blandas ihop med distrikt som ännu inte räknats om.
+    </p>
+    <div class="scroll"><table id="delta-parties"></table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Per riksdagsvalkrets</h2>
+    <p class="hint">Hur långt den slutliga räkningen kommit, och nettoförändringen i rösttal där den är klar.</p>
+    <div class="filters">
+      <input type="search" id="delta-search" placeholder="Sök valkrets…" aria-label="Sök valkrets">
+      <span class="count" id="delta-count"></span>
+    </div>
+    <div class="scroll"><table id="delta-vk"></table></div>
+  </section>
+</div>
+
+<footer class="page">
+  <p>
+    Källa: <a href="https://resultat.val.se/val2026" rel="noopener">Valmyndigheten</a>.
+    Data hämtas av ett schemalagt jobb och speglas här – val.se skickar inga CORS-huvuden
+    och begränsar antalet anrop hårt, så sidan anropar dem aldrig direkt.
+    <a href="https://github.com/magnuslundstedt/election-stats" rel="noopener">Källkod</a>.
+  </p>
+</footer>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+name: Update election data
+
+# val.se has no CORS headers and rate-limits hard, so this job is the only thing
+# that talks to them: one serial, paced fetcher whose output is mirrored into
+# docs/data/ and served same-origin by GitHub Pages.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Ignore cached state and refetch everything'
+        type: boolean
+        default: false
+
+# Counting runs for a limited window; the guard below switches this workflow off
+# once it passes, so it does not poll val.se for weeks after the result is final.
+env:
+  COUNTING_UNTIL: '2026-09-24T00:00:00Z'
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the counting window
+        id: window
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          now=$(date -u +%s)
+          until=$(date -u -d "$COUNTING_UNTIL" +%s)
+          if [ "$now" -ge "$until" ]; then
+            echo "Counting window closed ($COUNTING_UNTIL) - disabling this workflow."
+            echo "open=false" >> "$GITHUB_OUTPUT"
+            gh workflow disable update-data.yml -R "$GITHUB_REPOSITORY" || true
+          else
+            echo "open=true" >> "$GITHUB_OUTPUT"
+            echo "Window open for $(( (until - now) / 3600 )) more hours."
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.window.outputs.open == 'true'
+        with:
+          python-version: '3.12'
+
+      # ETags and the geography tree; a miss just costs a few extra requests.
+      - name: Restore fetch cache
+        if: steps.window.outputs.open == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: val-cache-${{ github.run_id }}
+          restore-keys: val-cache-
+
+      - name: Fetch results
+        if: steps.window.outputs.open == 'true'
+        env:
+          VAL_DELAY: '0.9'
+        run: |
+          python3 scripts/fetch_val.py ${{ inputs.full && '--full' || '' }}
+
+      - name: Commit if anything changed
+        if: steps.window.outputs.open == 'true'
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/data
+          if git diff --cached --quiet; then
+            echo 'No change in published data.'
+            exit 0
+          fi
+          prelim=$(python3 -c "import json;print(sum(len(v) for v in json.load(open('docs/data/prelim.json')).values()))")
+          final=$(python3 -c "import json;print(sum(len(v) for v in json.load(open('docs/data/final.json')).values()))")
+          git commit -m "data: ${prelim} preliminära, ${final} slutligt räknade valdistrikt"
+          git push

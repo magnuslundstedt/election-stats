@@ -17,3 +17,6 @@ build/
 # Local env
 .env
 .env.local
+
+# Fetch cache (etags, geography tree) - not part of the published site
+.cache/
