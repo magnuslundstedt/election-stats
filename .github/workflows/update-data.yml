@@ -84,4 +84,24 @@ jobs:
           prelim=$(python3 -c "import json;print(sum(len(v) for v in json.load(open('docs/data/prelim.json')).values()))")
           final=$(python3 -c "import json;print(sum(len(v) for v in json.load(open('docs/data/final.json')).values()))")
           git commit -m "data: ${prelim} preliminära, ${final} slutligt räknade valdistrikt"
-          git push
+
+          # Another run (the GitHub schedule and an external trigger can overlap)
+          # may have pushed while this one was fetching, which rejects our push.
+          # Rebase onto whatever landed and retry; our commit only touches
+          # docs/data, and a later snapshot is the one we want to keep.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "pushed on attempt ${attempt}"
+              exit 0
+            fi
+            echo "push rejected - rebasing onto origin/main (attempt ${attempt})"
+            git fetch origin main
+            if ! git rebase -X ours origin/main; then
+              git rebase --abort || true
+              echo "rebase failed; leaving the remote as-is, next run will resync"
+              exit 1
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "could not push after 5 attempts"
+          exit 1
