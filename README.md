@@ -3,6 +3,11 @@
 A small GitHub Pages site over the Swedish 2026 riksdag election results, built to
 answer two questions that val.se makes you click through hundreds of pages to answer:
 
+> **Status: complete and archived (19 September 2026).**
+> Both counts finished — all 6 626 valdistrikt are finally counted — so the automatic
+> updates have been switched off and the site now stands as a fixed record of the
+> result. See [Final result](#final-result) below.
+
 1. **How is the preliminary count in the uppsamlingsdistrikt going?**
    Late-arriving early votes — postal and overseas ballots — are counted in 314
    *uppsamlingsdistrikt*, one per kommun or kommunvalkrets. The site aggregates them,
@@ -13,6 +18,41 @@ answer two questions that val.se makes you click through hundreds of pages to an
    running final total against the national preliminary total is misleading, because
    most districts have not been recounted yet. This site compares the final count
    **only against the preliminary count in those same districts**.
+
+## Final result
+
+The election was held on 13 September 2026. The preliminary count completed on
+17 September; the final count by the länsstyrelser completed on 19 September.
+
+**Uppsamlingsdistrikten** — all 314 reported. Late-arriving postal and overseas votes
+leaned noticeably more to SD than the rest of the country, and away from S:
+
+| parti | andel här | andel i övriga landet | diff |
+| --- | ---: | ---: | ---: |
+| SD | 22.38 % | 17.53 % | **+4.85** |
+| S | 26.56 % | 28.06 % | −1.50 |
+| MP | 4.95 % | 6.11 % | −1.15 |
+| L | 4.22 % | 5.37 % | −1.15 |
+| C | 6.05 % | 7.06 % | −1.02 |
+| M | 18.85 % | 19.85 % | −1.00 |
+
+**Preliminär → slutlig**, compared like for like across all 6 626 valdistrikt:
+
+| parti | preliminär | slutlig | diff | p.e. |
+| --- | ---: | ---: | ---: | ---: |
+| S | 1 886 613 | 1 896 076 | +9 463 | +0.006 |
+| M | 1 336 632 | 1 343 513 | +6 881 | +0.007 |
+| SD | 1 176 807 | 1 183 305 | +6 498 | +0.012 |
+| V | 565 710 | 568 821 | +3 111 | +0.006 |
+| C | 474 468 | 475 795 | +1 327 | −0.014 |
+| KD | 415 826 | 417 508 | +1 682 | −0.005 |
+| MP | 413 018 | 414 342 | +1 324 | −0.010 |
+| L | 359 798 | 361 214 | +1 416 | −0.005 |
+| Övriga | 106 556 | 107 204 | +648 | +0.002 |
+| **Totalt** | **6 735 428** | **6 767 778** | **+32 350** | **+0.480 %** |
+
+The final count added 32 350 votes (+0.480 %) and moved no party by more than
+0.014 percentage points. Every party gained votes; the vote shares barely changed.
 
 ## Data source
 
@@ -86,16 +126,26 @@ Then serve the site locally:
 python3 -m http.server -d docs 8000   # http://localhost:8000
 ```
 
-## The scheduled job
+## The scheduled job (now disabled)
 
-`.github/workflows/update-data.yml` runs every 30 minutes, commits `docs/data/` only
-when something changed, and **switches itself off** once `COUNTING_UNTIL` passes — so
-it does not keep polling val.se for weeks after the result is settled. Bump that date
-in the workflow to extend the window, and re-enable with:
+`.github/workflows/update-data.yml` polled every 30 minutes while counting was under
+way, committing `docs/data/` only when something changed. It is **disabled** now that
+the count is complete. To run it again — for a future election, after changing
+`VALTILLFALLE` in the fetcher and `COUNTING_UNTIL` in the workflow:
 
 ```sh
 gh workflow enable update-data.yml
 ```
+
+Two things worth knowing if you reuse this:
+
+- **GitHub's `schedule:` trigger is unreliable.** It stayed silent for about three
+  hours after first being added, then fired roughly 11 times in 41 hours against a
+  `*/30 * * * *` expression — gaps of 2 to 5.5 hours. An external trigger calling
+  `gh workflow run` did the real work. Treat the cron as a fallback, not a guarantee.
+- **Two triggers can race.** One run checked out the repo, another pushed while the
+  first was still fetching, and the first push was rejected. `concurrency` did not
+  serialise them. The commit step now rebases onto `origin/main` and retries.
 
 ## Source and licence
 
